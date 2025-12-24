@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Menu, X, Linkedin, Mail, Phone, MapPin, ExternalLink, 
   Briefcase, GraduationCap, User, 
-  BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle, Upload, Image as ImageIcon
+  BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle, Upload
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
