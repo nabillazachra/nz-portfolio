@@ -39,6 +39,15 @@ export const dataService = {
     dataService.updateStats('projects', updated.length);
   },
 
+  updateProject: (project: Project) => {
+    const projects = dataService.getProjects();
+    const index = projects.findIndex(p => p.id === project.id);
+    if (index !== -1) {
+      projects[index] = project;
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+    }
+  },
+
   deleteProject: (id: string) => {
     const projects = dataService.getProjects();
     const updated = projects.filter(p => p.id !== id);
