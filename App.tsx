@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Menu, X, Linkedin, Mail, Phone, MapPin, ExternalLink, 
   Briefcase, GraduationCap, User, 
-  BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle
+  BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle, Upload, Image as ImageIcon
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -867,6 +867,7 @@ const AdminProjects = () => {
   const [newProject, setNewProject] = useState({
     title: '', category: '', image: 'https://picsum.photos/800/600', description: '', date: ''
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProjects = useCallback(() => {
     setProjects(dataService.getProjects());
@@ -876,16 +877,34 @@ const AdminProjects = () => {
     loadProjects();
   }, [loadProjects]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 500000) { // 500kb limit warning
+        alert("File size is large. It might exceed local storage limits.");
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProject({ ...newProject, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const project: Project = {
       id: Date.now().toString(),
       ...newProject
     };
-    dataService.addProject(project);
-    loadProjects();
-    setIsFormOpen(false);
-    setNewProject({ title: '', category: '', image: 'https://picsum.photos/800/600', description: '', date: '' });
+    try {
+      dataService.addProject(project);
+      loadProjects();
+      setIsFormOpen(false);
+      setNewProject({ title: '', category: '', image: 'https://picsum.photos/800/600', description: '', date: '' });
+    } catch (err) {
+      alert("Failed to save project. The image might be too large for browser storage.");
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -928,17 +947,47 @@ const AdminProjects = () => {
                     className="p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
                     value={newProject.category} onChange={e => setNewProject({...newProject, category: e.target.value})}
                   />
-                  <input 
-                    placeholder="Image URL" required 
-                    className="p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={newProject.image} onChange={e => setNewProject({...newProject, image: e.target.value})}
-                  />
+                  
+                  {/* Image Input Section */}
+                  <div className="flex gap-2">
+                     <div className="flex-1 relative">
+                        <input 
+                          placeholder="Image URL or Select File" required 
+                          className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
+                          value={newProject.image} onChange={e => setNewProject({...newProject, image: e.target.value})}
+                        />
+                     </div>
+                     <button 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
+                        title="Upload Photo"
+                     >
+                        <Upload size={20} />
+                     </button>
+                     <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                     />
+                  </div>
+
                   <input 
                     type="date" required 
                     className="p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
                     value={newProject.date} onChange={e => setNewProject({...newProject, date: e.target.value})}
                   />
                 </div>
+                
+                {newProject.image && newProject.image.startsWith('data:') && (
+                   <div className="w-full h-32 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden relative">
+                      <img src={newProject.image} alt="Preview" className="w-full h-full object-contain" />
+                      <div className="absolute top-2 right-2 bg-white/80 px-2 py-1 text-xs rounded shadow-sm">Preview</div>
+                   </div>
+                )}
+
                 <textarea 
                   placeholder="Description" required 
                   className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none" rows={3}
@@ -957,7 +1006,7 @@ const AdminProjects = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map(project => (
           <Card key={project.id} className="relative group overflow-hidden" noHover>
-            <div className="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden">
+            <div className="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden bg-slate-100">
                <img src={project.image} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <Button variant="danger" className="text-xs px-3 py-1.5" onClick={() => handleDelete(project.id)}>
