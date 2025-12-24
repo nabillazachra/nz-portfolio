@@ -5,7 +5,7 @@ import {
   Menu, X, Linkedin, Mail, Phone, MapPin, ExternalLink, 
   Briefcase, GraduationCap, User, 
   BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle, Upload,
-  Moon, Sun, Pencil, Search, Image as ImageIcon
+  Moon, Sun, Pencil, Search
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
