@@ -911,6 +911,7 @@ const AdminProjects = () => {
   const [newProject, setNewProject] = useState({
     title: '', category: '', image: 'https://picsum.photos/800/600', description: '', date: '', link: ''
   });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProjects = useCallback(() => {
@@ -979,9 +980,14 @@ const AdminProjects = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      dataService.deleteProject(id);
+    setDeleteId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      dataService.deleteProject(deleteId);
       loadProjects();
+      setDeleteId(null);
     }
   };
 
@@ -1001,6 +1007,43 @@ const AdminProjects = () => {
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Project Management</h2>
         <Button onClick={() => setIsFormOpen(true)}><FolderPlus size={18} /> Add Project</Button>
       </div>
+
+      <AnimatePresence>
+        {deleteId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setDeleteId(null)}
+          >
+             <motion.div
+               initial={{ scale: 0.95, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.95, opacity: 0, y: 20 }}
+               onClick={(e) => e.stopPropagation()}
+               className="w-full max-w-md"
+             >
+                <Card className="border-red-100 dark:border-red-900/30 shadow-2xl relative overflow-hidden" noHover>
+                   <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                   <div className="text-center p-2">
+                      <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                         <Trash2 size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Project</h3>
+                      <p className="text-slate-500 dark:text-slate-400 mb-8">
+                        Are you sure you want to delete this project? This action cannot be undone.
+                      </p>
+                      <div className="flex gap-3">
+                         <Button variant="secondary" onClick={() => setDeleteId(null)} className="flex-1">Cancel</Button>
+                         <Button variant="danger" onClick={confirmDelete} className="flex-1">Delete Project</Button>
+                      </div>
+                   </div>
+                </Card>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isFormOpen && (
