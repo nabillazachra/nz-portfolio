@@ -5,7 +5,7 @@ import {
   Menu, X, Linkedin, Mail, Phone, MapPin, ExternalLink, 
   Briefcase, GraduationCap, User, 
   BarChart3, FolderPlus, Trash2, LogOut, Send, CheckCircle, Upload,
-  Moon, Sun, Pencil, Search
+  Moon, Sun, Pencil, Search, LayoutDashboard
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -39,8 +39,8 @@ const itemScale = {
 
 // --- Shared Components ---
 
-const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button' }: any) => {
-  const baseStyle = "px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-95";
+const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button', ...props }: any) => {
+  const baseStyle = "px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 transform";
   const variants = {
     primary: "bg-primary text-white hover:bg-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40",
     secondary: "bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600",
@@ -49,11 +49,13 @@ const Button = ({ children, onClick, variant = 'primary', className = '', type =
   };
   return (
     <motion.button 
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={props.disabled ? {} : { scale: 1.02 }}
+      whileTap={props.disabled ? {} : { scale: 0.98 }}
       type={type} 
       onClick={onClick} 
-      className={`${baseStyle} ${variants[variant as keyof typeof variants]} ${className}`}
+      className={`${baseStyle} ${variants[variant as keyof typeof variants]} ${className} ${props.disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95'}`}
+      disabled={props.disabled}
+      {...props}
     >
       {children}
     </motion.button>
@@ -161,10 +163,6 @@ const Navbar = ({ darkMode, toggleTheme }: { darkMode: boolean, toggleTheme: () 
             <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-
-            <Link to="/login" className="px-4 py-2 text-sm font-medium text-primary border border-primary/20 rounded-full hover:bg-primary hover:text-white transition-all">
-              Admin
-            </Link>
           </div>
 
           <div className="md:hidden flex items-center gap-4">
@@ -196,7 +194,6 @@ const Navbar = ({ darkMode, toggleTheme }: { darkMode: boolean, toggleTheme: () 
                   {link.name}
                 </button>
               ))}
-               <Link to="/login" className="block px-3 py-3 text-base font-medium text-slate-400 hover:text-primary">Admin Login</Link>
             </div>
           </motion.div>
         )}
@@ -247,7 +244,6 @@ const Footer = () => (
             <li><button onClick={() => document.getElementById('portfolio')?.scrollIntoView({behavior: 'smooth'})} className="hover:text-white transition hover:translate-x-1 inline-block">Portfolio</button></li>
             <li><a href="https://linkedin.com/in/nabilla-zachra" target="_blank" rel="noreferrer" className="hover:text-white transition hover:translate-x-1 inline-block">LinkedIn Profile</a></li>
             <li><a href="https://dribbble.com" target="_blank" rel="noreferrer" className="hover:text-white transition hover:translate-x-1 inline-block">Dribbble Shots</a></li>
-            <li><Link to="/login" className="hover:text-white transition hover:translate-x-1 inline-block">Admin Dashboard</Link></li>
           </ul>
         </div>
       </div>
@@ -262,7 +258,7 @@ const Footer = () => (
 const Home = () => {
   return (
     <div className="pt-20 lg:pt-28 pb-20 overflow-hidden">
-      {/* Decorative Blobs */}
+      {/* Decorative Blobs - Only for Public Site */}
       <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-blue-100/50 dark:bg-blue-900/20 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen opacity-70"></div>
       <div className="absolute top-0 left-0 -z-10 w-[600px] h-[600px] bg-purple-100/50 dark:bg-purple-900/20 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen opacity-70"></div>
       <div className="absolute -bottom-8 left-20 -z-10 w-[600px] h-[600px] bg-pink-100/50 dark:bg-pink-900/20 rounded-full blur-[100px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen opacity-70"></div>
@@ -536,132 +532,170 @@ const Portfolio = () => {
 };
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     dataService.sendMessage(formData);
+    
     setSubmitted(true);
+    setIsSubmitting(false);
     setFormData({ name: '', email: '', subject: '', message: '' });
-    // Reset submitted state after 5 seconds
+    
+    // Reset success message after 5 seconds
     setTimeout(() => setSubmitted(false), 5000);
   };
 
   return (
-    <section className="py-24 bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-blue-200/20 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-10 right-10 w-48 h-48 bg-purple-200/20 rounded-full blur-2xl"></div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionTitle title="Get in Touch" subtitle="Have a project in mind? Let's work together." />
+    <section className="py-24 bg-slate-50 dark:bg-slate-950 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionTitle title="Get in Touch" subtitle="Have a project in mind? Let's discuss how we can work together." />
         
-        <div className="grid md:grid-cols-3 gap-8">
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="md:col-span-1 space-y-6"
+            transition={{ duration: 0.6 }}
           >
-            <Card className="text-center hover:border-primary/30 group">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary group-hover:text-white transition-all">
-                <Mail size={22} />
-              </div>
-              <h4 className="font-bold text-slate-900 dark:text-white mb-1">Email</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400 break-all">{CONTACT_INFO.email}</p>
-            </Card>
-            <Card className="text-center hover:border-primary/30 group">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary group-hover:text-white transition-all">
-                <Phone size={22} />
-              </div>
-              <h4 className="font-bold text-slate-900 dark:text-white mb-1">Phone</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{CONTACT_INFO.phone}</p>
-            </Card>
-            <Card className="text-center hover:border-primary/30 group">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 group-hover:bg-primary group-hover:text-white transition-all">
-                <Linkedin size={22} />
-              </div>
-              <h4 className="font-bold text-slate-900 dark:text-white mb-1">Social</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{CONTACT_INFO.linkedin}</p>
-            </Card>
-          </motion.div>
+            <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-6">Contact Information</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+              I'm currently available for freelance work and full-time opportunities. 
+              If you have a project that needs some creative touch, feel free to contact me.
+            </p>
+            
+            <div className="space-y-6">
+              <Card className="flex items-center gap-4 hover:border-primary/50 group cursor-pointer" noHover>
+                 <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 text-primary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Mail size={20} />
+                 </div>
+                 <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wide">Email</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{CONTACT_INFO.email}</p>
+                 </div>
+              </Card>
+              
+              <Card className="flex items-center gap-4 hover:border-primary/50 group cursor-pointer" noHover>
+                 <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 text-primary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Phone size={20} />
+                 </div>
+                 <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wide">Phone</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{CONTACT_INFO.phone}</p>
+                 </div>
+              </Card>
 
-          <motion.div 
-             initial={{ opacity: 0, x: 30 }}
-             whileInView={{ opacity: 1, x: 0 }}
-             viewport={{ once: true }}
-             transition={{ delay: 0.2 }}
-             className="md:col-span-2"
+              <Card className="flex items-center gap-4 hover:border-primary/50 group cursor-pointer" noHover>
+                 <div className="w-12 h-12 bg-blue-50 dark:bg-slate-700 text-primary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                    <MapPin size={20} />
+                 </div>
+                 <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wide">Location</p>
+                    <p className="text-slate-900 dark:text-white font-medium">{CONTACT_INFO.location}</p>
+                 </div>
+              </Card>
+            </div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <Card className="h-full">
-              {submitted ? (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="h-full flex flex-col items-center justify-center text-center py-10"
-                >
-                  <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                    <CheckCircle size={40} />
+            <Card className="p-8">
+               <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Send Me a Message</h3>
+               <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+                        <input 
+                          type="text" 
+                          name="name"
+                          required
+                          value={formData.name}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white"
+                          placeholder="John Doe"
+                        />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                        <input 
+                          type="email" 
+                          name="email"
+                          required
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white"
+                          placeholder="john@example.com"
+                        />
+                     </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
-                  <p className="text-slate-600 dark:text-slate-400">Thank you for reaching out. I'll get back to you soon.</p>
-                  <Button onClick={() => setSubmitted(false)} variant="outline" className="mt-8">Send another</Button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Name</label>
-                      <input 
-                        required
-                        type="text" 
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Email</label>
-                      <input 
-                        required
-                        type="email" 
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Subject</label>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</label>
                     <input 
-                      required
                       type="text" 
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
-                      placeholder="Project Inquiry"
+                      name="subject"
+                      required
                       value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white"
+                      placeholder="Project Inquiry"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Message</label>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Message</label>
                     <textarea 
+                      name="message"
                       required
-                      rows={5} 
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none dark:text-white"
-                      placeholder="Tell me about your project..."
+                      rows={4}
                       value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white resize-none"
+                      placeholder="Tell me about your project..."
                     ></textarea>
                   </div>
-                  <Button type="submit" className="w-full py-4 text-lg shadow-xl shadow-blue-500/20">
-                    <Send size={20} /> Send Message
+                  
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                     {isSubmitting ? (
+                       <span className="flex items-center gap-2">
+                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                         Sending...
+                       </span>
+                     ) : (
+                       <>Send Message <Send size={18} /></>
+                     )}
                   </Button>
-                </form>
-              )}
+
+                  {submitted && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-4 rounded-lg flex items-center gap-3 text-sm font-medium border border-green-100 dark:border-green-800"
+                    >
+                       <CheckCircle size={20} />
+                       Message sent successfully! I'll get back to you soon.
+                    </motion.div>
+                  )}
+               </form>
             </Card>
           </motion.div>
         </div>
@@ -702,57 +736,59 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-black flex items-center justify-center p-4 font-sans">
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-sm"
       >
-        <Card>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-8 border border-gray-200 dark:border-gray-800">
           <div className="text-center mb-8">
-             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">
-                <User size={32} />
+             <div className="w-12 h-12 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+                NZ.
              </div>
-            <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">Admin Login</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Sign in to manage your portfolio</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Portal</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 uppercase tracking-wider">Restricted Access</p>
           </div>
           {error && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="bg-red-50 text-red-500 p-3 rounded-lg text-sm mb-6 flex items-center gap-2"
+              className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded text-sm mb-6 flex items-center gap-2 border border-red-100 dark:border-red-900"
             >
               <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
               {error}
             </motion.div>
           )}
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase">Email</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-white rounded focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent outline-none transition-all"
                 placeholder="admin@demo.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase">Password</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-white rounded focus:ring-2 focus:ring-gray-900 dark:focus:ring-white focus:border-transparent outline-none transition-all"
                 placeholder="admin"
               />
             </div>
-            <Button type="submit" className="w-full py-3">Sign In</Button>
+            <button type="submit" className="w-full py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black font-bold rounded hover:bg-black dark:hover:bg-gray-200 transition-colors">
+              Sign In
+            </button>
           </form>
-          <div className="mt-6 text-center">
-              <Link to="/" className="text-sm text-slate-500 hover:text-primary transition-colors">Back to Website</Link>
+          <div className="mt-8 text-center pt-6 border-t border-gray-100 dark:border-gray-800">
+              <Link to="/" className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">← Back to Portfolio</Link>
           </div>
-        </Card>
+        </div>
       </motion.div>
     </div>
   );
@@ -775,58 +811,74 @@ const AdminLayout = ({ children, darkMode, toggleTheme }: any) => {
   };
 
   const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: <BarChart3 size={20} /> },
-    { name: 'Projects', path: '/admin/projects', icon: <FolderPlus size={20} /> },
-    { name: 'Messages', path: '/admin/messages', icon: <Mail size={20} /> },
+    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
+    { name: 'Projects', path: '/admin/projects', icon: <FolderPlus size={18} /> },
+    { name: 'Messages', path: '/admin/messages', icon: <Mail size={18} /> },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col shadow-xl z-20">
+    // Admin layout uses 'font-sans' explicitly to differentiate from public site
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300 font-sans">
+      {/* Sidebar - Visual Distinction: Darker, sharper */}
+      <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col shadow-2xl z-20 border-r border-slate-800">
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold">N.</div>
-          <span className="text-lg font-serif font-bold tracking-wide">Dashboard</span>
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-sm">NZ</div>
+          <div>
+             <span className="block text-sm font-bold tracking-wide">Admin Panel</span>
+             <span className="block text-xs text-slate-500">v1.0.2</span>
+          </div>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {menuItems.map((item) => (
-            <Link 
-              key={item.path} 
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                activePath === item.path ? 'bg-primary text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              <span className="font-medium">{item.name}</span>
-            </Link>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-slate-800">
-           <button onClick={toggleTheme} className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg w-full transition-all mb-2">
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        
+        <div className="p-4">
+           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 px-2">Main Menu</p>
+           <nav className="space-y-1">
+             {menuItems.map((item) => (
+               <Link 
+                 key={item.path} 
+                 to={item.path}
+                 className={`flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-all duration-200 ${
+                   activePath === item.path ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                 }`}
+               >
+                 {item.icon}
+                 <span>{item.name}</span>
+               </Link>
+             ))}
+           </nav>
+        </div>
+
+        <div className="mt-auto p-4 border-t border-slate-800 bg-slate-900/50">
+           <div className="flex items-center gap-3 px-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"><User size={14}/></div>
+              <div className="overflow-hidden">
+                 <p className="text-sm font-medium text-white truncate">Nabilla Z.</p>
+                 <p className="text-xs text-slate-500 truncate">Admin</p>
+              </div>
+           </div>
+           <button onClick={toggleTheme} className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded w-full transition-all mb-1 text-sm">
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
             <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg w-full transition-all">
-            <LogOut size={20} />
-            <span>Logout</span>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded w-full transition-all text-sm">
+            <LogOut size={16} />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
       {/* Mobile Header & Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white dark:bg-slate-900 shadow-sm h-16 flex items-center justify-between px-6 md:hidden z-10">
-          <span className="font-bold text-slate-900 dark:text-white">CRM</span>
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 h-16 flex items-center justify-between px-6 md:hidden z-10">
+          <span className="font-bold text-gray-900 dark:text-white">Admin</span>
           <div className="flex gap-4">
-             <button onClick={toggleTheme} className="text-slate-500 dark:text-slate-400">
+             <button onClick={toggleTheme} className="text-gray-500 dark:text-gray-400">
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
              </button>
-             <button onClick={handleLogout} className="text-slate-500 dark:text-slate-400"><LogOut size={20} /></button>
+             <button onClick={handleLogout} className="text-gray-500 dark:text-gray-400"><LogOut size={20} /></button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 dark:bg-slate-950/50">
+        <main className="flex-1 overflow-y-auto p-6 md:p-10">
           {children}
         </main>
       </div>
@@ -854,52 +906,61 @@ const Dashboard = () => {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8"
+      className="space-y-6 max-w-6xl mx-auto"
     >
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Welcome back, Nabilla!</h2>
-        <p className="text-slate-500 dark:text-slate-400">Here's what's happening with your portfolio today.</p>
+      <div className="flex justify-between items-end mb-2">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Overview</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Portfolio performance metrics</p>
+        </div>
+        <div className="text-right hidden sm:block">
+           <p className="text-sm font-medium text-gray-900 dark:text-white">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="flex items-center gap-4 hover:shadow-lg transition-shadow border-l-4 border-l-blue-500" noHover>
-          <div className="p-4 bg-blue-100 dark:bg-blue-900/30 text-primary rounded-xl"><User size={24} /></div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Views</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.views}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Views</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.views}</p>
           </div>
-        </Card>
-        <Card className="flex items-center gap-4 hover:shadow-lg transition-shadow border-l-4 border-l-purple-500" noHover>
-          <div className="p-4 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl"><FolderPlus size={24} /></div>
-          <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Projects</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.projects}</p>
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><BarChart3 size={24} /></div>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+           <div>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Total Projects</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.projects}</p>
           </div>
-        </Card>
-        <Card className="flex items-center gap-4 hover:shadow-lg transition-shadow border-l-4 border-l-green-500" noHover>
-          <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl"><Mail size={24} /></div>
-          <div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Messages</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.messages}</p>
+          <div className="p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 rounded-lg"><FolderPlus size={24} /></div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
+           <div>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Inbox</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.messages}</p>
           </div>
-        </Card>
+          <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 rounded-lg"><Mail size={24} /></div>
+        </div>
       </div>
 
-      <Card className="h-[450px]" noHover>
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Visitor Analytics</h3>
-        <ResponsiveContainer width="100%" height="85%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.3} />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-            <Tooltip 
-              cursor={{fill: 'rgba(255,255,255,0.1)'}} 
-              contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: '#fff'}}
-            />
-            <Bar dataKey="views" fill="#2563eb" radius={[6, 6, 0, 0]} barSize={40} activeBar={{fill: '#1d4ed8'}} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-6">Traffic Analysis</h3>
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" strokeOpacity={0.5} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
+              <Tooltip 
+                cursor={{fill: 'rgba(0,0,0,0.05)'}} 
+                contentStyle={{borderRadius: '4px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: '#fff', fontSize: '12px'}}
+              />
+              <Bar dataKey="views" fill="#2563eb" radius={[4, 4, 0, 0]} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </motion.div>
   );
 };
@@ -1001,11 +1062,16 @@ const AdminProjects = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="space-y-6 max-w-6xl mx-auto"
     >
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Project Management</h2>
-        <Button onClick={() => setIsFormOpen(true)}><FolderPlus size={18} /> Add Project</Button>
+        <div>
+           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Projects</h2>
+           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage your portfolio items</p>
+        </div>
+        <button onClick={() => setIsFormOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded font-medium text-sm hover:bg-blue-700 transition flex items-center gap-2">
+           <FolderPlus size={16} /> Add Project
+        </button>
       </div>
 
       <AnimatePresence>
@@ -1022,24 +1088,22 @@ const AdminProjects = () => {
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.95, opacity: 0, y: 20 }}
                onClick={(e) => e.stopPropagation()}
-               className="w-full max-w-md"
+               className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
              >
-                <Card className="border-red-100 dark:border-red-900/30 shadow-2xl relative overflow-hidden" noHover>
-                   <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
-                   <div className="text-center p-2">
-                      <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                         <Trash2 size={32} />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Project</h3>
-                      <p className="text-slate-500 dark:text-slate-400 mb-8">
-                        Are you sure you want to delete this project? This action cannot be undone.
-                      </p>
-                      <div className="flex gap-3">
-                         <Button variant="secondary" onClick={() => setDeleteId(null)} className="flex-1">Cancel</Button>
-                         <Button variant="danger" onClick={confirmDelete} className="flex-1">Delete Project</Button>
-                      </div>
-                   </div>
-                </Card>
+                 <div className="h-1 bg-red-500"></div>
+                 <div className="p-6 text-center">
+                    <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                       <Trash2 size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Delete Project</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                      Are you sure you want to delete this project? This action cannot be undone.
+                    </p>
+                    <div className="flex gap-3">
+                       <button onClick={() => setDeleteId(null)} className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition">Cancel</button>
+                       <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded font-medium text-sm hover:bg-red-700 transition">Delete</button>
+                    </div>
+                 </div>
              </motion.div>
           </motion.div>
         )}
@@ -1053,110 +1117,135 @@ const AdminProjects = () => {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <Card className="mb-8 border-primary/20 ring-4 ring-primary/5 dark:ring-primary/10" noHover>
-              <h3 className="text-lg font-bold mb-6 text-slate-900 dark:text-white">{editingId ? 'Edit Project' : 'Add New Project'}</h3>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{editingId ? 'Edit Project' : 'Add New Project'}</h3>
+                 <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              </div>
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  <input 
-                    placeholder="Title" required 
-                    className="p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})}
-                  />
-                  <input 
-                    placeholder="Category (e.g. UI/UX)" required 
-                    className="p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={newProject.category} onChange={e => setNewProject({...newProject, category: e.target.value})}
-                  />
-                  
-                  {/* Image Input Section */}
-                  <div className="flex gap-2">
-                     <div className="flex-1 relative">
-                        <input 
-                          placeholder="Image URL or Select File" required 
-                          className="w-full p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                          value={newProject.image} onChange={e => setNewProject({...newProject, image: e.target.value})}
-                        />
-                     </div>
-                     <button 
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-4 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                        title="Upload Photo"
-                     >
-                        <Upload size={20} />
-                     </button>
+                  <div>
+                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Title</label>
                      <input 
-                        type="file" 
-                        ref={fileInputRef}
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={handleImageUpload}
+                       required 
+                       className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                       value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})}
                      />
                   </div>
+                  <div>
+                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Category</label>
+                     <input 
+                       required 
+                       className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                       value={newProject.category} onChange={e => setNewProject({...newProject, category: e.target.value})}
+                     />
+                  </div>
+                  
+                  {/* Image Input Section */}
+                  <div className="md:col-span-2">
+                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Image Source</label>
+                     <div className="flex gap-2">
+                        <div className="flex-1">
+                           <input 
+                             placeholder="Image URL or Select File" required 
+                             className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                             value={newProject.image} onChange={e => setNewProject({...newProject, image: e.target.value})}
+                           />
+                        </div>
+                        <button 
+                           type="button"
+                           onClick={() => fileInputRef.current?.click()}
+                           className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                           title="Upload Photo"
+                        >
+                           <Upload size={18} />
+                        </button>
+                        <input 
+                           type="file" 
+                           ref={fileInputRef}
+                           className="hidden" 
+                           accept="image/*"
+                           onChange={handleImageUpload}
+                        />
+                     </div>
+                  </div>
 
-                  <input 
-                    type="date" required 
-                    className="p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={newProject.date} onChange={e => setNewProject({...newProject, date: e.target.value})}
-                  />
+                  <div>
+                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Date</label>
+                     <input 
+                       type="date" required 
+                       className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                       value={newProject.date} onChange={e => setNewProject({...newProject, date: e.target.value})}
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Project Link</label>
+                     <input 
+                        placeholder="https://..." 
+                        className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        value={newProject.link} onChange={e => setNewProject({...newProject, link: e.target.value})}
+                      />
+                  </div>
                 </div>
                 
-                 {/* Image Preview - Updated to show for both URL and Base64 */}
+                 {/* Image Preview */}
                 {newProject.image && (
-                   <div className="w-full h-40 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden relative flex items-center justify-center">
+                   <div className="w-full h-40 bg-gray-50 dark:bg-black/20 rounded border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center relative overflow-hidden">
                       <img src={newProject.image} alt="Preview" className="h-full w-full object-contain" onError={(e) => (e.currentTarget.src = 'https://placehold.co/600x400?text=Invalid+Image+URL')} />
-                      <div className="absolute top-2 right-2 bg-white/80 dark:bg-black/60 px-2 py-1 text-xs rounded shadow-sm text-slate-800 dark:text-white">Preview</div>
+                      <div className="absolute top-2 right-2 bg-black/60 px-2 py-0.5 text-xs rounded text-white">Preview</div>
                    </div>
                 )}
 
-                 <input 
-                    placeholder="Project Link (Optional)" 
-                    className="w-full p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={newProject.link} onChange={e => setNewProject({...newProject, link: e.target.value})}
-                  />
-
-                <textarea 
-                  placeholder="Description" required 
-                  className="w-full p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none" rows={3}
-                  value={newProject.description} onChange={e => setNewProject({...newProject, description: e.target.value})}
-                />
-                <div className="flex gap-3 pt-2">
-                  <Button type="submit">{editingId ? 'Update Project' : 'Save Project'}</Button>
-                  <Button type="button" variant="secondary" onClick={handleCancel}>Cancel</Button>
+                <div>
+                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 uppercase">Description</label>
+                   <textarea 
+                     required 
+                     className="w-full p-2.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" rows={3}
+                     value={newProject.description} onChange={e => setNewProject({...newProject, description: e.target.value})}
+                   />
+                </div>
+                
+                <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded font-medium text-sm hover:bg-blue-700 transition">
+                    {editingId ? 'Save Changes' : 'Create Project'}
+                  </button>
+                  <button type="button" onClick={handleCancel} className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                    Cancel
+                  </button>
                 </div>
               </form>
-            </Card>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map(project => (
-          <Card key={project.id} className="relative group overflow-hidden" noHover>
-            <div className="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden bg-slate-100 dark:bg-slate-900">
+          <div key={project.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+            <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-900">
                <img src={project.image} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <Button variant="secondary" className="text-xs px-3 py-1.5" onClick={() => handleEdit(project)}>
-                    <Pencil size={14} /> Edit
-                  </Button>
-                  <Button variant="danger" className="text-xs px-3 py-1.5" onClick={() => handleDelete(project.id)}>
-                    <Trash2 size={14} /> Delete
-                  </Button>
+                  <button onClick={() => handleEdit(project)} className="p-2 bg-white text-gray-900 rounded-full hover:bg-blue-50 hover:text-blue-600 transition">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => handleDelete(project.id)} className="p-2 bg-white text-red-600 rounded-full hover:bg-red-50 transition">
+                    <Trash2 size={16} />
+                  </button>
                </div>
             </div>
-            <h3 className="font-bold text-lg text-slate-900 dark:text-white">{project.title}</h3>
-            <div className="flex justify-between items-center mt-2">
-               <span className="text-sm text-primary font-medium bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">{project.category}</span>
-               <span className="text-xs text-slate-400">{project.date}</span>
+            <div className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-bold text-gray-900 dark:text-white truncate pr-2">{project.title}</h3>
+                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded whitespace-nowrap">{project.category}</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 h-8">{project.description}</p>
+              <div className="flex justify-between items-center text-xs text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-3">
+                 <span>{project.date}</span>
+                 {project.link && <ExternalLink size={12} />}
+              </div>
             </div>
-            {project.link && (
-               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                  <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-primary flex items-center gap-1">
-                     <ExternalLink size={12} /> {project.link}
-                  </a>
-               </div>
-            )}
-          </Card>
+          </div>
         ))}
       </div>
     </motion.div>
@@ -1180,62 +1269,75 @@ const AdminMessages = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="space-y-6 max-w-6xl mx-auto"
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Inbox</h2>
+         <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Client inquiries and contact form submissions</p>
+         </div>
          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
                type="text" 
-               placeholder="Search messages..." 
+               placeholder="Search inbox..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-64"
+               className="pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full sm:w-64 text-sm"
             />
          </div>
       </div>
 
-      <Card className="overflow-hidden p-0 shadow-lg" noHover>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="p-5 font-semibold text-slate-700 dark:text-slate-300">From</th>
-                <th className="p-5 font-semibold text-slate-700 dark:text-slate-300">Subject</th>
-                <th className="p-5 font-semibold text-slate-700 dark:text-slate-300">Date</th>
-                <th className="p-5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                <th className="px-6 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs">Sender</th>
+                <th className="px-6 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs">Subject</th>
+                <th className="px-6 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs">Date</th>
+                <th className="px-6 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs">Status</th>
+                <th className="px-6 py-3 font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {filteredMessages.map(msg => (
-                <tr key={msg.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer">
-                  <td className="p-5">
-                    <div className="font-bold text-slate-900 dark:text-white">{msg.name}</div>
-                    <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{msg.email}</div>
+                <tr key={msg.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900 dark:text-white">{msg.name}</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">{msg.email}</div>
                   </td>
-                  <td className="p-5">
-                    <div className="font-medium text-slate-900 dark:text-white">{msg.subject}</div>
-                    <div className="text-slate-500 dark:text-slate-400 truncate max-w-xs mt-0.5 opacity-80 group-hover:opacity-100">{msg.message}</div>
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900 dark:text-white font-medium mb-0.5">{msg.subject}</div>
+                    <div className="text-gray-500 dark:text-gray-400 truncate max-w-xs text-xs">{msg.message}</div>
                   </td>
-                  <td className="p-5 text-slate-500 dark:text-slate-400">{msg.date}</td>
-                  <td className="p-5">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${msg.read ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700' : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'}`}>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{msg.date}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      msg.read 
+                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' 
+                        : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    }`}>
                       {msg.read ? 'Read' : 'New'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                     <button className="text-blue-600 hover:text-blue-800 text-xs font-medium">View</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {filteredMessages.length === 0 && (
-             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-                <Mail size={48} className="mb-4 opacity-50"/>
-                <p>No messages found.</p>
+             <div className="p-12 text-center text-gray-400 flex flex-col items-center">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center mb-3">
+                   <Mail size={20} />
+                </div>
+                <p>No messages found matching your criteria.</p>
              </div>
           )}
         </div>
-      </Card>
+      </div>
     </motion.div>
   );
 };
